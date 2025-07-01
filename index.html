@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan Curricular: Lógica y Algoritmos II</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Modern Professional (Subtle grays, deep blues, soft accents) -->
+    <!-- Application Structure Plan: Se mantiene la estructura de presentación por diapositivas con navegación secuencial y directa. La barra de navegación superior permite saltar a cualquier diapositiva, mientras que los botones 'Anterior' y 'Siguiente' facilitan un flujo controlado. Esta estructura es ideal para una exposición formal, permitiendo al presentador controlar el ritmo y al público seguir la secuencia lógica. Se han mejorado los estilos visuales para una apariencia más profesional y pulcra. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Identificación del curso -> Goal: Informar -> Viz/Method: Tarjetas de resumen con íconos -> Justification: Proporciona información clave de forma digerible y visualmente atractiva en la diapositiva de descripción.
+        - Report Info: Unidades Temáticas -> Goal: Organizar -> Viz/Method: Pestañas interactivas con JS -> Justification: Permite explorar el contenido detallado de cada unidad sin sobrecargar la diapositiva, manteniendo la interactividad.
+        - Report Info: Análisis de Créditos (horas) -> Goal: Comparar y Analizar -> Viz/Method: Gráfico de barras apiladas (Chart.js) -> Justification: Visualiza claramente la distribución de la carga de trabajo por unidad y tipo, facilitando la comprensión cuantitativa.
+        - Report Info: Ponderación de Evaluación -> Goal: Informar -> Viz/Method: Gráfico de dona (Chart.js) -> Justification: Presenta la estructura de evaluación de manera concisa y visualmente impactante.
+        - Report Info: Metodología y Recursos -> Goal: Informar -> Viz/Method: Tarjetas con íconos y listas -> Justification: Mejora la legibilidad y el atractivo visual de la información textual, organizando los puntos clave.
+        - Library/Method: Tailwind CSS para diseño responsivo y profesional, Vanilla JS para la lógica de diapositivas y pestañas, Chart.js para visualizaciones de datos en Canvas. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8FAFC; /* Light background */
+            color: #334155; /* Darker gray for text */
+            overflow: hidden; /* Prevent scrolling for slide-based presentation */
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+            font-weight: 500;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #1E40AF; /* Deep blue for active/hover */
+            border-bottom-color: #1E40AF;
+        }
+        .tab-btn {
+            transition: background-color 0.3s, color 0.3s, transform 0.2s;
+            font-weight: 500;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            margin: 0.25rem;
+            background-color: #E2E8F0; /* Light gray for inactive tabs */
+            color: #475569; /* Darker gray for inactive tab text */
+        }
+        .tab-btn:hover {
+            background-color: #CBD5E1;
+        }
+        .tab-btn.active {
+            background-color: #1E40AF; /* Deep blue for active tab */
+            color: #FFFFFF;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 450px;
+            background-color: #FFFFFF;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .slide {
+            display: none;
+            flex-grow: 1;
+            overflow-y: auto; /* Allow content within slide to scroll if needed */
+            padding-bottom: 80px; /* Space for fixed navigation */
+            align-items: center; /* Center content vertically within slide */
+        }
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .slide > div {
+            width: 100%;
+            max-width: 1200px; /* Constrain content width */
+            margin: auto; /* Center content within slide */
+        }
+        .slide-controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #1F2937; /* Darker footer for controls */
+            padding: 1rem 0;
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            z-index: 60;
+            box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.2);
+        }
+        .slide-button {
+            padding: 0.75rem 2rem;
+            background-color: #3B82F6; /* Bright blue for buttons */
+            color: white;
+            border-radius: 9999px; /* Fully rounded */
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .slide-button:hover:not(:disabled) {
+            background-color: #2563EB; /* Darker blue on hover */
+            transform: translateY(-2px);
+        }
+        .slide-button:disabled {
+            background-color: #9CA3AF; /* Gray for disabled */
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        h1, h2, h3 {
+            color: #1E40AF; /* Deep blue for headings */
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header id="header" class="bg-white/90 backdrop-blur-md shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="text-2xl font-bold text-gray-800">Lógica y Algoritmos II</div>
+            <div class="hidden md:flex space-x-8">
+                <a href="#inicio" class="nav-link py-2" data-slide-target="0">Inicio</a>
+                <a href="#descripcion" class="nav-link py-2" data-slide-target="1">Descripción</a>
+                <a href="#competencias" class="nav-link py-2" data-slide-target="2">Competencias</a>
+                <a href="#contenido" class="nav-link py-2" data-slide-target="3">Contenido</a>
+                <a href="#metodologia" class="nav-link py-2" data-slide-target="4">Metodología</a>
+                <a href="#evaluacion" class="nav-link py-2" data-slide-target="5">Evaluación</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="flex-grow flex flex-col">
+        <section id="inicio" class="slide active bg-gradient-to-br from-blue-900 to-blue-700 text-white text-center py-20 flex flex-col justify-center items-center">
+            <div class="container mx-auto px-6">
+                <h1 class="text-4xl md:text-6xl font-extrabold leading-tight drop-shadow-lg">Lógica y Algoritmos II</h1>
+                <p class="text-xl md:text-2xl mt-4 font-light opacity-90">Fundamentos de Programación Orientada a Objetos con Java</p>
+                <p class="text-lg mt-6 text-blue-200">Propuesta Curricular para la Formación de Ingenieros</p>
+                <p class="text-md mt-2 text-blue-300">Universidad de la Amazonia</p>
+            </div>
+        </section>
+
+        <section id="descripcion" class="slide py-16 md:py-20 flex flex-col justify-center items-center">
+            <div class="container mx-auto px-6">
+                <h2 class="text-3xl md:text-4xl font-bold text-center mb-12">Descripción del Curso</h2>
+                <div class="bg-white p-8 rounded-xl shadow-xl border border-gray-100">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <div>
+                            <h3 class="text-2xl font-semibold mb-4 text-blue-800">Justificación</h3>
+                            <p class="text-gray-700 leading-relaxed text-lg">La evolución tecnológica demanda profesionales con sólidas habilidades en desarrollo de software. Este curso aborda la brecha entre el avance del hardware y la creciente complejidad del software, preparando a los estudiantes para diseñar soluciones eficientes y modernas. Es crucial para formar ingenieros capaces de enfrentar los desafíos del ecosistema digital actual.</p>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-semibold mb-4 text-blue-800">Identificación</h3>
+                            <div class="grid grid-cols-2 gap-4 text-gray-700 text-base">
+                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200"><strong>Código:</strong> 9900037</div>
+                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200"><strong>Semestre:</strong> Segundo</div>
+                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200"><strong>Créditos:</strong> 3</div>
+                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200"><strong>Horas Totales:</strong> 144</div>
+                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200"><strong>Naturaleza:</strong> Teórica-práctica</div>
+                                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200"><strong>Área:</strong> Básica de Ingeniería</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="competencias" class="slide py-16 md:py-20 bg-white flex flex-col justify-center items-center">
+            <div class="container mx-auto px-6">
+                <h2 class="text-3xl md:text-4xl font-bold text-center mb-12">Competencias y Objetivos</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <div class="bg-gray-50 p-8 rounded-xl border border-gray-200 shadow-md">
+                        <h3 class="text-2xl font-semibold mb-4 text-blue-800">Competencias a Desarrollar</h3>
+                        <p class="mb-4 text-gray-700 text-lg">El estudiante utilizará la programación de computadores para resolver de manera automatizada situaciones de su entorno mediante la plataforma Java y las características de la Programación Orientada a Objetos (POO).</p>
+                        <ul class="list-disc list-inside space-y-3 text-gray-600 text-base">
+                            <li>Reconocer la sintaxis del lenguaje de programación Java y sus procesos de desarrollo.</li>
+                            <li>Aplicar los conceptos de la POO en el desarrollo de soluciones algorítmicas.</li>
+                            <li>Diferenciar y emplear clases y objetos para la construcción de programas en Java.</li>
+                        </ul>
+                    </div>
+                    <div class="bg-gray-50 p-8 rounded-xl border border-gray-200 shadow-md">
+                        <h3 class="text-2xl font-semibold mb-4 text-blue-800">Objetivos de Aprendizaje</h3>
+                        <p class="mb-4 text-gray-700 text-lg">Aplicar las características de la POO (abstracción, encapsulación, modularidad, herencia y polimorfismo) diseñando programas de computador utilizando el lenguaje JAVA.</p>
+                        <ul class="list-disc list-inside space-y-3 text-gray-600 text-base">
+                            <li>Construir clases y objetos eficientemente.</li>
+                            <li>Aplicar herencia y polimorfismo en la solución de problemas complejos de la vida real.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="contenido" class="slide py-16 md:py-20 flex flex-col justify-center items-center">
+            <div class="container mx-auto px-6">
+                <h2 class="text-3xl md:text-4xl font-bold text-center mb-4">Contenido Temático</h2>
+                <p class="text-center text-gray-600 mb-12 max-w-3xl mx-auto text-lg">El curso se estructura en cinco unidades fundamentales que construyen progresivamente el conocimiento en Programación Orientada a Objetos. Explore cada unidad para conocer sus temas específicos.</p>
+
+                <div id="tabs-container" class="mb-12">
+                    <div class="flex flex-wrap justify-center border-b-2 border-gray-200 pb-2">
+                        <button data-tab="unidad1" class="tab-btn active">Unidad I: Generalidades IDE</button>
+                        <button data-tab="unidad2" class="tab-btn">Unidad II: Abstracción</button>
+                        <button data-tab="unidad3" class="tab-btn">Unidad III: Encapsulamiento</button>
+                        <button data-tab="unidad4" class="tab-btn">Unidad IV: Herencia</button>
+                        <button data-tab="unidad5" class="tab-btn">Unidad V: Polimorfismo</button>
+                    </div>
+                    <div class="py-8 bg-white rounded-xl shadow-lg border border-gray-100 mt-4">
+                        <div id="unidad1" class="tab-content px-6">
+                            <h3 class="text-2xl font-semibold mb-4 text-center text-blue-800">Unidad I: Generalidades IDE</h3>
+                            <ul class="list-disc list-inside space-y-2 text-gray-700 text-base max-w-2xl mx-auto">
+                                <li>Plataforma Java y tipos de programas.</li>
+                                <li>Compilación y ejecución de programas.</li>
+                                <li>Creación de aplicaciones con el JDK.</li>
+                                <li>Comentarios, identificadores, Palabras clave.</li>
+                                <li>Literales, expresiones y operadores.</li>
+                                <li>Variables, tipos de datos, bloques y sentencias.</li>
+                            </ul>
+                        </div>
+                        <div id="unidad2" class="tab-content hidden px-6">
+                            <h3 class="text-2xl font-semibold mb-4 text-center text-blue-800">Unidad II: Abstracción</h3>
+                             <ul class="list-disc list-inside space-y-2 text-gray-700 text-base max-w-2xl mx-auto">
+                                <li>Definición de paradigmas de programación.</li>
+                                <li>Concepto y aplicación de la abstracción.</li>
+                                <li>Modificadores de acceso en Java.</li>
+                            </ul>
+                        </div>
+                        <div id="unidad3" class="tab-content hidden px-6">
+                           <h3 class="text-2xl font-semibold mb-4 text-center text-blue-800">Unidad III: Encapsulamiento</h3>
+                            <ul class="list-disc list-inside space-y-2 text-gray-700 text-base max-w-2xl mx-auto">
+                                <li>Definición y principios del encapsulamiento.</li>
+                                <li>Clases, Objetos, Mensajes y métodos.</li>
+                                <li>Constructores y creación de objetos.</li>
+                                <li><strong>Práctica:</strong> Inicio del Proyecto Final (aplicando los pilares de POO).</li>
+                            </ul>
+                        </div>
+                        <div id="unidad4" class="tab-content hidden px-6">
+                           <h3 class="text-2xl font-semibold mb-4 text-center text-blue-800">Unidad IV: Herencia</h3>
+                            <ul class="list-disc list-inside space-y-2 text-gray-700 text-base max-w-2xl mx-auto">
+                                <li>Conceptos de Herencia, Superclase y Subclases.</li>
+                                <li>Definición y representación de clases.</li>
+                                <li>Acceso a variables y métodos de clase.</li>
+                                <li>Sobrecarga y sobreescritura de métodos.</li>
+                                <li>Clases abstractas e Interfaces.</li>
+                            </ul>
+                        </div>
+                        <div id="unidad5" class="tab-content hidden px-6">
+                           <h3 class="text-2xl font-semibold mb-4 text-center text-blue-800">Unidad V: Polimorfismo</h3>
+                            <ul class="list-disc list-inside space-y-2 text-gray-700 text-base max-w-2xl mx-auto">
+                                <li>Definición y conceptualización avanzada de polimorfismo.</li>
+                                <li>Aplicaciones prácticas en Java.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="text-2xl font-bold text-center mb-6 text-blue-800">Análisis de Créditos y Distribución Horaria</h3>
+                <div class="chart-container">
+                    <canvas id="horasChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="metodologia" class="slide py-16 md:py-20 bg-white flex flex-col justify-center items-center">
+            <div class="container mx-auto px-6">
+                <h2 class="text-3xl md:text-4xl font-bold text-center mb-12">Metodología y Recursos</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <div>
+                        <h3 class="text-2xl font-semibold mb-4 text-blue-800">Estrategias Metodológicas</h3>
+                        <p class="text-gray-700 mb-6 text-lg">La metodología se establece semestralmente a través de un Acuerdo Pedagógico, fomentando un ambiente de aprendizaje colaborativo y adaptativo, centrado en el estudiante.</p>
+                        <div class="space-y-4">
+                            <div class="p-5 bg-gray-50 rounded-xl border border-gray-200 shadow-sm"><strong>Trabajo Presencial:</strong> Bases teóricas sólidas, formulación de ideas, abstracción del conocimiento, trabajos en clase y exposiciones.</div>
+                            <div class="p-5 bg-gray-50 rounded-xl border border-gray-200 shadow-sm"><strong>Trabajo Dirigido:</strong> Talleres prácticos, análisis de videos y revisión de avances para aclarar dudas y fortalecer el conocimiento.</div>
+                            <div class="p-5 bg-gray-50 rounded-xl border border-gray-200 shadow-sm"><strong>Trabajo Independiente:</strong> Investigación autónoma en fuentes confiables para profundizar y adquirir nuevos conceptos.</div>
+                        </div>
+                    </div>
+                     <div>
+                        <h3 class="text-2xl font-semibold mb-4 text-blue-800">Recursos Disponibles</h3>
+                         <p class="text-gray-700 mb-6 text-lg">Se cuenta con una infraestructura y herramientas modernas para garantizar una experiencia de aprendizaje completa y efectiva.</p>
+                        <ul class="list-none space-y-3 text-gray-700 text-base">
+                            <li class="flex items-center"><span class="text-blue-600 text-xl mr-3">&#9679;</span> Video Beam de alta definición.</li>
+                            <li class="flex items-center"><span class="text-blue-600 text-xl mr-3">&#9679;</span> Acceso a Internet de alta velocidad y Bases de datos bibliográficas especializadas.</li>
+                            <li class="flex items-center"><span class="text-blue-600 text-xl mr-3">&#9679;</span> Salón de clases con ambiente propicio para el aprendizaje interactivo.</li>
+                            <li class="flex items-center"><span class="text-blue-600 text-xl mr-3">&#9679;</span> Software especializado (IDE para Java) actualizado.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="evaluacion" class="slide py-16 md:py-20 flex flex-col justify-center items-center">
+            <div class="container mx-auto px-6">
+                 <h2 class="text-3xl md:text-4xl font-bold text-center mb-12">Evaluación y Bibliografía</h2>
+                 <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+                     <div class="bg-white p-8 rounded-xl shadow-xl border border-gray-100">
+                        <h3 class="text-2xl font-semibold mb-4 text-blue-800 text-center">Estructura de Evaluación</h3>
+                         <p class="text-gray-700 mb-6 text-center text-lg">La evaluación se alinea con el acuerdo pedagógico, buscando verificar integralmente los logros y competencias alcanzados por el estudiante.</p>
+                         <div class="chart-container" style="height: 250px; max-height: 250px;">
+                            <canvas id="evaluacionChart"></canvas>
+                         </div>
+                     </div>
+                     <div class="bg-white p-8 rounded-xl shadow-xl border border-gray-100">
+                        <h3 class="text-2xl font-semibold mb-4 text-blue-800">Bibliografía Principal</h3>
+                        <ul class="list-disc list-inside space-y-2 text-gray-700 text-base">
+                           <li>**Diseñar y programar, todo es empezar:** Una introducción a la programación orientada a objetos usando UML y Java.</li>
+                           <li>**Lemay, L. (1999). Aprendiendo Java 2 en 21 días.**</li>
+                           <li>**Santamaria, C. A. B. (1998). Los 600 principales métodos del java.**</li>
+                           <li>**Becerra Santamaría, C.A. Estructuras de Datos en JAVA.**</li>
+                           <li>**Deitel y Deitel. Cómo Programar en Java.**</li>
+                        </ul>
+                     </div>
+                 </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div class="slide-controls">
+        <button id="prevBtn" class="slide-button">&larr; Anterior</button>
+        <button id="nextBtn" class="slide-button">Siguiente &rarr;</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const slides = document.querySelectorAll('main section.slide');
+            let currentSlideIndex = 0;
+
+            function showSlide(index) {
+                slides.forEach((slide, i) => {
+                    if (i === index) {
+                        slide.classList.add('active');
+                        slide.style.display = 'flex';
+                    } else {
+                        slide.classList.remove('active');
+                        slide.style.display = 'none';
+                    }
+                });
+                currentSlideIndex = index;
+                updateNavigationButtons();
+                updateHeaderNavActiveState();
+            }
+
+            function updateNavigationButtons() {
+                const prevBtn = document.getElementById('prevBtn');
+                const nextBtn = document.getElementById('nextBtn');
+                if (prevBtn) prevBtn.disabled = currentSlideIndex === 0;
+                if (nextBtn) nextBtn.disabled = currentSlideIndex === slides.length - 1;
+            }
+
+            function updateHeaderNavActiveState() {
+                const navLinks = document.querySelectorAll('.nav-link');
+                navLinks.forEach(link => {
+                    const targetIndex = parseInt(link.dataset.slideTarget);
+                    if (targetIndex === currentSlideIndex) {
+                        link.classList.add('active');
+                    } else {
+                        link.classList.remove('active');
+                    }
+                });
+            }
+
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => {
+                    if (currentSlideIndex > 0) {
+                        showSlide(currentSlideIndex - 1);
+                    }
+                });
+            }
+
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                    if (currentSlideIndex < slides.length - 1) {
+                        showSlide(currentSlideIndex + 1);
+                    }
+                });
+            }
+
+            const headerNavLinks = document.querySelectorAll('.nav-link');
+            headerNavLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetIndex = parseInt(link.dataset.slideTarget);
+                    showSlide(targetIndex);
+                });
+            });
+
+            showSlide(0);
+
+            const tabsContainer = document.getElementById('tabs-container');
+            if(tabsContainer) {
+                const tabButtons = tabsContainer.querySelectorAll('.tab-btn');
+                const tabContents = tabsContainer.querySelectorAll('.tab-content');
+
+                tabButtons.forEach(button => {
+                    button.addEventListener('click', () => {
+                        tabButtons.forEach(btn => btn.classList.remove('active'));
+                        button.classList.add('active');
+
+                        const tabId = button.dataset.tab;
+                        tabContents.forEach(content => {
+                            if (content.id === tabId) {
+                                content.classList.remove('hidden');
+                            } else {
+                                content.classList.add('hidden');
+                            }
+                        });
+                    });
+                });
+            }
+
+            const ctxHoras = document.getElementById('horasChart');
+            if(ctxHoras) {
+                new Chart(ctxHoras, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Unidad I', 'Unidad II', 'Unidad III', 'Unidad IV', 'Unidad V'],
+                        datasets: [
+                            {
+                                label: 'Trabajo Presencial (TP)',
+                                data: [4, 8, 14, 14, 8],
+                                backgroundColor: 'rgba(30, 58, 138, 0.8)', /* Deep blue */
+                                borderColor: 'rgba(30, 58, 138, 1)',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Trabajo Dirigido (TD)',
+                                data: [2, 2, 4, 4, 4],
+                                backgroundColor: 'rgba(59, 130, 246, 0.8)', /* Bright blue */
+                                borderColor: 'rgba(59, 130, 246, 1)',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Trabajo Independiente (TI)',
+                                data: [10, 10, 20, 20, 20],
+                                backgroundColor: 'rgba(147, 197, 253, 0.8)', /* Light blue */
+                                borderColor: 'rgba(147, 197, 253, 1)',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                stacked: true,
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Horas',
+                                    color: '#475569'
+                                },
+                                ticks: {
+                                    color: '#475569'
+                                },
+                                grid: {
+                                    color: '#E2E8F0'
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                backgroundColor: '#334155',
+                                titleColor: '#FFFFFF',
+                                bodyColor: '#FFFFFF',
+                                borderColor: '#475569',
+                                borderWidth: 1,
+                                displayColors: true,
+                            },
+                            title: {
+                                display: true,
+                                text: 'Distribución de Horas por Unidad y Tipo de Trabajo',
+                                font: { size: 18, weight: 'bold' },
+                                color: '#1E40AF'
+                            },
+                            legend: {
+                                labels: {
+                                    color: '#475569',
+                                    font: { size: 14 }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            const ctxEvaluacion = document.getElementById('evaluacionChart');
+            if(ctxEvaluacion) {
+                 new Chart(ctxEvaluacion, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Seguimiento y Parciales', 'Examen Final / Proyecto'],
+                        datasets: [{
+                            label: 'Ponderación',
+                            data: [70, 30],
+                            backgroundColor: [
+                                'rgba(30, 58, 138, 0.8)', /* Deep blue */
+                                'rgba(59, 130, 246, 0.8)' /* Bright blue */
+                            ],
+                            borderColor: [
+                                '#FFFFFF',
+                                '#FFFFFF'
+                            ],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    color: '#475569',
+                                    font: { size: 14 }
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Ponderación de la Evaluación (70% / 30%)',
+                                font: { size: 16, weight: 'bold' },
+                                color: '#1E40AF'
+                            },
+                            tooltip: {
+                                backgroundColor: '#334155',
+                                titleColor: '#FFFFFF',
+                                bodyColor: '#FFFFFF',
+                                borderColor: '#475569',
+                                borderWidth: 1,
+                                displayColors: true,
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed !== null) {
+                                            label += context.parsed + '%';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
